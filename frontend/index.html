@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Legacy Radar Integration — Operator View</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; }
+    dt { font-weight: 600; }
+    #status { font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>Legacy Radar Unit — Live Reading</h1>
+  <p>Status: <span id="status">connecting…</span></p>
+  <dl>
+    <dt>Device ID</dt><dd id="device_id">—</dd>
+    <dt>Timestamp (ms)</dt><dd id="timestamp_ms">—</dd>
+    <dt>Range (m)</dt><dd id="range_m">—</dd>
+    <dt>Bearing (deg)</dt><dd id="bearing_deg">—</dd>
+  </dl>
+  <p><em>Tracer-bullet UI — plain HTML/JS on purpose, to keep this slice thin.
+     Connection/staleness indicator and the React rebuild land in issue #7.</em></p>
+  <script>
+    const status = document.getElementById("status");
+
+    function connect() {
+      const ws = new WebSocket(`ws://${location.hostname || "localhost"}:8080`);
+      ws.onopen = () => (status.textContent = "connected");
+      ws.onclose = () => {
+        status.textContent = "disconnected — retrying…";
+        setTimeout(connect, 1000);
+      };
+      ws.onerror = () => ws.close();
+      ws.onmessage = (event) => {
+        const reading = JSON.parse(event.data);
+        for (const [key, value] of Object.entries(reading)) {
+          const el = document.getElementById(key);
+          if (el) el.textContent = value;
+        }
+      };
+    }
+
+    connect();
+  </script>
+</body>
+</html>

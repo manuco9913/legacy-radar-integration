@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package sensor;
+
+// SensorReading is the single source of truth for a normalized reading —
+// the adapter produces it, the backend consumes it. Neither side should
+// invent fields the other doesn't know about; the contract lives here.
+message SensorReading {
+  uint32 device_id = 1;
+  uint64 timestamp_ms = 2;
+  float range_m = 3;
+  float bearing_deg = 4;
+}
+
+message StreamAck {
+  uint64 received_count = 1;
+}
+
+// The adapter is the client: it opens one long-lived client-streaming call
+// and pushes readings as they arrive from the sensor. The backend is the
+// server: it ingests the stream and acks once when the stream closes.
+service SensorService {
+  rpc StreamReadings(stream SensorReading) returns (StreamAck);
+}
